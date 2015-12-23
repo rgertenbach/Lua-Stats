@@ -1,5 +1,4 @@
 --[[
-TODO: qNorm
 TODO: Type checking
 TODO: Sample Size
 ]]
@@ -69,6 +68,8 @@ end
 
 -- Cumulative Probability Density Function of a normal distribution
 local function pNorm(q, mu, sd)
+  mu = mu or 0
+  sd = sd or 1
   if (q > 0) then  
     return 0.5 + integral(dNorm, 0, q, 1e-5, mu, sd)
   else
@@ -78,8 +79,21 @@ end
 
 -- Quantile function of the Normal distribution
 -- Calculates the Z-Score based on the cumulative probabiltiy
--- a.k.a. Inverse Normal distribution
--- Here goes qNorm
+local function qNorm(p, accuracy)
+  accuracy = accuracy or 0.01
+  local maxz , minz, pval, zval = 100, -100, 0, 0
+
+  while (maxz - minz > accuracy) do 
+    pval = pNorm(zval)
+    if (pval > p) then
+      maxz = zval 
+    else 
+      minz = zval 
+    end 
+    zval = (maxz + minz) / 2
+  end
+  return zval 
+end 
 
 
 --[[
@@ -106,8 +120,8 @@ end
 -- Quantile function goes here
 
 
--- Calculates the Z-Score for one or two samples
-local function zScore(y1, sd1, n1, y2, sd2, n2)
+-- Calculates the Z-Score for one or two samples. Assumes non equivalent variance
+local function zValue(y1, sd1, n1, y2, sd2, n2)
   assert(sd1 > 0, "Standard Deviation has to be positive")
   assert(n1 > 1, "Sample Size has to be at least 2")
 
@@ -123,6 +137,12 @@ local function zScore(y1, sd1, n1, y2, sd2, n2)
 end
 
 
+-- Calculaes the t-value of one or two means, assuming non equivalent variance
+function tValue(y1, sd1, n1, y2, sd2, n2)
+  return zValue(v1, sd1, n1, v2, sd2, n2)
+end
+
+
 -- Returns the p-value of a quantile q of a probability function f
 local function pValue(q, f)
   if (q == nil) then
@@ -131,3 +151,15 @@ local function pValue(q, f)
     return math.abs(1 - math.abs(f(q) - f(-q)))
   end
 end
+
+--[[
+Pre-test calculations
+-- need qNorm
+]]
+
+-- Sample size calculator
+--local function sampleSize(base, uplift, sd, alpha, beta, paired)
+ -- local n = (dNorm())
+
+
+print(qNorm(0.95))
