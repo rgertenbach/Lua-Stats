@@ -20,10 +20,36 @@ local function integral(f, start, stop, delta, ...)
 local function factorial(x)
   if (x == 1) then
     return x
+  elseif (x % 1 == 0) then
+    return x * (factorial(x - 1))
   else 
-    return x * (factorial(x-1))
+    return gamma(x - 1)
   end
 end
+
+
+-- I have no idea what the hell is going on here. Taken from:
+-- http://rosettacode.org/wiki/Gamma_function#Lua
+local function gamma(x)
+  local gamma = 0.577215664901
+  local coeff = -0.65587807152056
+  local quad  = -0.042002635033944
+  local qui   = 0.16653861138228
+  local set   = -0.042197734555571
+
+  local function recigamma(z)
+    return z + gamma * z^2 + coeff * z^3 + quad * z^4 + qui * z^5 + set * z^6
+  end
+   
+  local function gammafunc(z)
+    if z == 1 then return 1
+    elseif math.abs(z) <= 0.5 then return 1 / recigamma(z)
+    else return (z - 1) * gammafunc(z-1)
+    end
+  end
+
+  return gammafunc(x)
+end 
 
 
 --[[
@@ -37,7 +63,7 @@ local function dNorm(x, mu, sd)
 
   return (1 / 
          (sd * math.sqrt(2 * math.pi))) * 
-         math.exp(-(((x - mu) * (x - mu)) / (2 * sd * sd)))
+         math.exp(-(((x - mu) * (x - mu)) / (2 * sd^2)))
 end
 
 
@@ -54,6 +80,31 @@ end
 -- Calculates the Z-Score based on the cumulative probabiltiy
 -- a.k.a. Inverse Normal distribution
 -- Here goes qNorm
+
+
+--[[
+T-Distribution Functions
+]]
+
+-- Probability Density function of a T Distribution
+local function dT(x, df)
+  return gamma((df + 1) / 2) / 
+         (math.sqrt(df * math.pi) * gamma(df / 2)) * 
+         (1 + x^2 / df)^(-(df + 1) / 2)
+end 
+
+
+-- CDF of the T-Distribution
+local function pT(q, df)
+  if (q > 0) then  
+    return 0.5 + integral(dT, 0, q, 1e-5, mu, sd)
+  else
+    return 0.5 - integral(dT, 0, -q, 1e-5, mu, sd)
+  end
+end 
+
+-- Quantile function goes here
+
 
 -- Calculates the Z-Score for one or two samples
 local function zScore(y1, sd1, n1, y2, sd2, n2)
@@ -78,21 +129,5 @@ local function pValue(q, f)
     return nil
   else
     return math.abs(1 - math.abs(f(q) - f(-q)))
-  end
-end
-
-
---[[
-Pretest Tools
-]]
-
--- Calculates the minimum sample size needed for a binomial test
-local function sampleSize(test, mu, uplift, zScore, method)
-  method = method or "Chochran"
-  zScore = zScore or 1.96
-  if (test == nil or mu == nil or uplift == nil) then
-    return nil
-  elseif (method == "Chochran") then
-    return math.ceil((zScore * zScore * mu * (1 - mu)) / (uplift * uplift))
   end
 end
