@@ -1,10 +1,16 @@
 --[[
+TODO: optimize findX for chi square
+TODO: Make findX automaitcally find bounds
 TODO: Type checking
 TODO: Sample Size
+TODO: F-Distribution and F-Test
+TODO: Chi-Square test
 ]]
 
--- Integrates a function and calculates the area under the function
--- from start to stop in delta sized steps
+
+--[[ Generics ]]--
+
+-- Integrates a function from start to stop in delta sized steps
 local function integral(f, start, stop, delta, ...)
     local delta = delta or 1e-5
     local area = 0
@@ -27,13 +33,35 @@ local function factorial(x)
 end
 
 
+-- finds the x neded for a givnen function f
+-- Need to find a way to pass min and max bounds for estimator
+local function findX(y, f, accuracy, ...)
+  assert(y ~= nil, "No y value provided")
+  assert(f ~= nil, "No function provided")
+  accuracy = accuracy or 0.001
+
+  local minX, maxX, yVal, xVal = -100, 100, 0, 0
+
+  while (maxX - minX > accuracy) do 
+    yVal = f(xVal, unpack({...}))
+    if (yVal > y) then
+      maxX = xVal
+    else
+      minX = xVal
+    end 
+    xVal = (maxX + minX) / 2
+  end 
+  return xVal
+end 
+
+
 -- I have no idea what the hell is going on here. Taken from:
 -- http://rosettacode.org/wiki/Gamma_function#Lua
 local function gamma(x)
-  local gamma = 0.577215664901
+  local gamma =  0.577215664901
   local coeff = -0.65587807152056
   local quad  = -0.042002635033944
-  local qui   = 0.16653861138228
+  local qui   =  0.16653861138228
   local set   = -0.042197734555571
 
   local function recigamma(z)
@@ -51,9 +79,17 @@ local function gamma(x)
 end 
 
 
---[[
-Normal Distribution Functions
-]]
+-- p-value of a quantile q of a probability function f
+local function pValue(q, f)
+  if (q == nil) then
+    return nil
+  else
+    return math.abs(1 - math.abs(f(q) - f(-q)))
+  end
+end
+
+
+--[[ Normal Distribution Functions ]]--
 
 -- Probability Density function of a Normal Distribution
 local function dNorm(x, mu, sd)
@@ -66,39 +102,25 @@ local function dNorm(x, mu, sd)
 end
 
 
--- Cumulative Probability Density Function of a normal distribution
-local function pNorm(q, mu, sd)
+-- CDF of a normal distribution
+local function pNorm(q, mu, sd, accuracy)
   mu = mu or 0
   sd = sd or 1
-  if (q > 0) then  
-    return 0.5 + integral(dNorm, 0, q, 1e-5, mu, sd)
-  else
-    return 0.5 - integral(dNorm, 0, -q, 1e-5, mu, sd)
-  end
+  accuracy = accuracy or 1e-3
+
+  return 0.5 + 
+    (q > 0 and 1 or -1) * integral(dNorm, 0, math.abs(q), accuracy, mu, sd)
 end
 
 -- Quantile function of the Normal distribution
 -- Calculates the Z-Score based on the cumulative probabiltiy
 local function qNorm(p, accuracy)
   accuracy = accuracy or 0.01
-  local maxz , minz, pval, zval = 100, -100, 0, 0
-
-  while (maxz - minz > accuracy) do 
-    pval = pNorm(zval)
-    if (pval > p) then
-      maxz = zval 
-    else 
-      minz = zval 
-    end 
-    zval = (maxz + minz) / 2
-  end
-  return zval 
+  return findX(p, pNorm, accuracy)
 end 
 
 
---[[
-T-Distribution Functions
-]]
+--[[ T-Distribution Functions ]]--
 
 -- Probability Density function of a T Distribution
 local function dT(x, df)
@@ -109,21 +131,48 @@ end
 
 
 -- CDF of the T-Distribution
-local function pT(q, df)
-  if (q > 0) then  
-    return 0.5 + integral(dT, 0, q, 1e-5, mu, sd)
-  else
-    return 0.5 - integral(dT, 0, -q, 1e-5, mu, sd)
-  end
+local function pT(q, df, accuracy)
+  assert(df > 0, "More at least 1 degree of freedom needed")
+  accuracy = accuracy or 1e-5
+
+  return 0.5 + (q > 0 and 1 or -1) * integral(dT, 0, math.abs(q), accuracy, df)
 end 
 
--- Quantile function goes here
+-- Finds T-Ratio for a given p-value
+local function qT(p, accuracy)
+  accuracy = accuracy or 0.01
+  return findX(p, pT, accuracy)
+end 
 
 
--- Calculates the Z-Score for one or two samples. Assumes non equivalent variance
+--[[ Chi-Square Distribution Functions ]]--
+
+-- Probability density of the chi square distribution
+local function dChisq(x, df)
+  return 1 / (2^(df / 2) * gamma(df / 2)) * x^(df / 2 - 1) * math.exp(-x / 2)
+end
+
+
+-- CDF of the Chi square distribution
+local function pChisq(q, df)
+  return integral(dChisq, 0, q, 1e-4, df)
+end 
+
+
+-- Quantile function of the Chi-Square Distribution
+local function qChisq(p, df, accuracy)
+    accuracy = accuracy or 0.01
+    return findX(p, pChisq, accuracy, df)
+end 
+
+
+--[[ Tests ]]--
+
+-- Calculates the Z-Score for one or two samples. 
+-- Assumes non equivalent Variance
 local function zValue(y1, sd1, n1, y2, sd2, n2)
   assert(sd1 > 0, "Standard Deviation has to be positive")
-  assert(n1 > 1, "Sample Size has to be at least 2")
+  assert(n1  > 1, "Sample Size has to be at least 2")
 
   local y2 = y2 or 0
   local z
@@ -138,28 +187,6 @@ end
 
 
 -- Calculaes the t-value of one or two means, assuming non equivalent variance
-function tValue(y1, sd1, n1, y2, sd2, n2)
+local function tValue(y1, sd1, n1, y2, sd2, n2)
   return zValue(v1, sd1, n1, v2, sd2, n2)
 end
-
-
--- Returns the p-value of a quantile q of a probability function f
-local function pValue(q, f)
-  if (q == nil) then
-    return nil
-  else
-    return math.abs(1 - math.abs(f(q) - f(-q)))
-  end
-end
-
---[[
-Pre-test calculations
--- need qNorm
-]]
-
--- Sample size calculator
---local function sampleSize(base, uplift, sd, alpha, beta, paired)
- -- local n = (dNorm())
-
-
-print(qNorm(0.95))
