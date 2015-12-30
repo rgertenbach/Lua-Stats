@@ -89,6 +89,92 @@ local function pValue(q, f)
 end
 
 
+-- Simple map function
+local function map(t, f)
+  local output = t
+
+  for i, e in ipairs(t) do
+    output[i] = f(e)
+  end
+  return output
+end 
+
+
+-- Simple reduce function
+local function reduce(t, f)
+  local result
+
+  for i, value in ipairs(t) do
+    if i == 1 then
+      result = value
+    else
+      result = f(result, value)
+    end 
+  end
+  return result
+end 
+
+
+-- Concatenates tables and scalars into one list
+local function unify(...)
+  local output = {}
+  for i, element in ipairs({...}) do
+    if type(element) == 'number' then
+      table.insert(output, element)
+    elseif type(element) == 'table' then
+      for j, row in ipairs(element) do
+        table.insert(output, row)
+      end
+    end 
+  end 
+  return output
+end 
+
+
+--[[ Basic Arithmetic functions neeeded for aggregate functions ]]--
+local function sum(...) 
+  return reduce(unify(...), function(a, b) return a + b end)
+end 
+
+
+local function count(...) 
+  return #unify(...) 
+end 
+
+
+local function mean(...) 
+  return sum(...) / count(...) 
+end 
+
+
+local function sumSquares(...)
+  local data = unify(...)
+  local mu = mean(data)
+
+  return sum(map(data, function(x) return (x - mu)^2 end))  
+end 
+
+
+local function var(...)
+  return sumSquares(...) / (count(...) - 1)
+end
+
+
+local function varPop(...)
+  return sumSquares(...) / count(...)
+end 
+
+
+local function sd(...)
+  return math.sqrt(var(...))
+end 
+
+
+local function sdPop(...)
+  return math.sqrt(varPop(...))
+end
+
+
 --[[ Normal Distribution Functions ]]--
 
 -- Probability Density function of a Normal Distribution
@@ -190,3 +276,9 @@ end
 local function tValue(y1, sd1, n1, y2, sd2, n2)
   return zValue(v1, sd1, n1, v2, sd2, n2)
 end
+
+
+-- Performs a z-test on two tables
+local function zTest(t1, t2)
+  return
+end 
