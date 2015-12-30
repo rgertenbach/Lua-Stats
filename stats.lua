@@ -82,11 +82,11 @@ end
 
 
 -- p-value of a quantile q of a probability function f
-local function pValue(q, f)
+local function pValue(q, f, ...)
   if (q == nil) then
     return nil
   else
-    return math.abs(1 - math.abs(f(q) - f(-q)))
+    return math.abs(1 - math.abs(f(q, unpack({...})) - f(-q, unpack({...}))))
   end
 end
 
@@ -133,7 +133,7 @@ local function unify(...)
 end 
 
 
---[[ Basic Arithmetic functions neeeded for aggregate functions ]]--
+--[[ Basic Arithmetic functions needed for aggregate functions ]]--
 local function sum(...) 
   return reduce(unify(...), function(a, b) return a + b end)
 end 
@@ -274,12 +274,12 @@ end
 -- CDF of the T-Distribution
 local function pT(q, df, accuracy)
   assert(df > 0, "More at least 1 degree of freedom needed")
-  accuracy = accuracy or 1e-5
+  accuracy = accuracy or 1e-4
 
   return 0.5 + (q > 0 and 1 or -1) * integral(dT, 0, math.abs(q), accuracy, df)
 end 
 
--- Finds T-Ratio for a given p-value
+-- Finds T-Ratio for a given p-value.
 local function qT(p, accuracy)
   accuracy = accuracy or 0.01
   return findX(p, pT, accuracy)
@@ -288,19 +288,19 @@ end
 
 --[[ Chi-Square Distribution Functions ]]--
 
--- Probability density of the chi square distribution
+-- Probability density of the chi square distribution.
 local function dChisq(x, df)
   return 1 / (2^(df / 2) * gamma(df / 2)) * x^(df / 2 - 1) * math.exp(-x / 2)
 end
 
 
--- CDF of the Chi square distribution
+-- CDF of the Chi square distribution.
 local function pChisq(q, df)
   return integral(dChisq, 0, q, 1e-4, df)
 end 
 
 
--- Quantile function of the Chi-Square Distribution
+-- Quantile function of the Chi-Square Distribution.
 local function qChisq(p, df, accuracy)
     accuracy = accuracy or 0.01
     return findX(p, pChisq, accuracy, df)
@@ -310,7 +310,7 @@ end
 --[[ Tests ]]--
 
 -- Calculates the Z-Score for one or two samples. 
--- Assumes non equivalent Variance
+-- Assumes non equivalent Variance.
 local function zValue(y1, sd1, n1, y2, sd2, n2)
   assert(sd1 > 0, "Standard Deviation has to be positive")
   assert(n1  > 1, "Sample Size has to be at least 2")
@@ -327,13 +327,32 @@ local function zValue(y1, sd1, n1, y2, sd2, n2)
 end
 
 
--- Calculaes the t-value of one or two means, assuming non equivalent variance
+-- Performs a z-test on two tables and returns z-statistic.
+local function zTest(t1, t2)
+  return (mean(t1) - mean(t2)) / 
+         math.sqrt(var(t1) / count(t1) + var(t2) / count(t2))
+end 
+
+
+-- Calculates the p-value of a two sample zTest.
+local function zTestP(t1, t2)
+  return pValue(zTest(t1, t2), pNorm)
+end
+
+
+-- Calculaes the t-value of one or two means, assuming non equivalent variance.
 local function tValue(y1, sd1, n1, y2, sd2, n2)
   return zValue(v1, sd1, n1, v2, sd2, n2)
 end
 
 
--- Performs a z-test on two tables
-local function zTest(t1, t2)
-  return
+-- Performs a t-test on two tables and returns t-statistic.
+local function tTest(t1, t2)
+  return zTest(t1, t2)
 end 
+
+
+-- Calculates the p-value of a two sample tTest.
+local function tTestP(t1, t2)
+  return pValue(zTest(t1, t2), pT, count(t1, t2) - 2)
+end
