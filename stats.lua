@@ -5,6 +5,8 @@ TODO: Type checking
 TODO: Sample Size
 TODO: F-Distribution and F-Test
 TODO: Chi-Square test
+TODO: Add more quantile algorithms 
+      use: http://127.0.0.1:11774/library/stats/html/quantile.html
 ]]
 
 
@@ -173,6 +175,59 @@ end
 local function sdPop(...)
   return math.sqrt(varPop(...))
 end
+
+
+local function min(...)
+  local data = unify(...)
+  
+  table.sort(data)
+  return data[1]
+end 
+
+
+local function max(...)
+  local data = unify(...)
+  table.sort(data)
+  return data[#data]
+end 
+
+
+-- Calculates the quantile
+-- Currently uses the weighted mean of the two values the position is inbetween
+local function quantile(t, q)
+  assert(q >= 0 and q <= 1, "Quantile must be between 0 and 1")
+  table.sort(t)
+  local position = #t * q + 0.5
+  local mod = position % 1
+
+  if position < 1 then 
+    return t[1]
+  elseif position > #t then
+    return t[#t]
+  elseif mod == 0 then
+    return t[position]
+    else
+      return mod * t[math.ceil(position)] +
+             (1 - mod) * t[math.floor(position)] 
+  end 
+end 
+
+
+local function median(t)
+  return quantile(t, 0.5)
+end
+
+
+local function quartile(t, i)
+  local quartiles = {0, 0.25, 0.5, 0.75, 1}
+  if i == 1 then 
+    return min(t)
+  elseif i== 5 then
+    return max(t)
+  else 
+    return quantile(t, quartiles[i])
+  end 
+end 
 
 
 --[[ Normal Distribution Functions ]]--
