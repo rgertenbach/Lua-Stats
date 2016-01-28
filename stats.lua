@@ -25,7 +25,10 @@ local function integral(f, start, stop, delta, ...)
 
 -- Calculates the factorial of a number n recursively
 local function factorial(x)
-  if (x == 1) then
+  assert(x >= 0, "x has to be a positive integer or 0")
+  if (x == 0) then
+    return 1
+  elseif (x == 1) then
     return x
   elseif (x % 1 == 0) then
     return x * (factorial(x - 1))
@@ -33,7 +36,6 @@ local function factorial(x)
     return gamma(x - 1)
   end
 end
-
 
 -- finds the x neded for a givnen function f
 -- Need to find a way to pass min and max bounds for estimator
@@ -83,16 +85,16 @@ end
 
 -- p-value of a quantile q of a probability function f
 local function pValue(q, f, ...)
-  if (q == nil) then
-    return nil
-  else
-    return math.abs(1 - math.abs(f(q, unpack({...})) - f(-q, unpack({...}))))
-  end
+  assert(q ~= nil, "pValue needs a q-value")
+  assert(f ~= nil, "pValue needs a function")
+  return math.abs(1 - math.abs(f(q, unpack({...})) - f(-q, unpack({...}))))
 end
 
 
 -- Simple map function
 local function map(t, f)
+  assert(t ~= nil, "No table provided to map")
+  assert(f ~= nil, "No function provided to map")
   local output = t
 
   for i, e in ipairs(t) do
@@ -104,6 +106,8 @@ end
 
 -- Simple reduce function
 local function reduce(t, f)
+  assert(t ~= nil, "No table provided to reduce")
+  assert(f ~= nil, "No function provided to reduce")
   local result
 
   for i, value in ipairs(t) do
@@ -116,6 +120,16 @@ local function reduce(t, f)
   return result
 end 
 
+
+-- checks if a value is in a table
+local function in_table(value, t)
+  for i, e in ipairs(t) do
+    if value == e then
+      return true
+    end
+  end
+  return false
+end
 
 -- Concatenates tables and scalars into one list
 local function unify(...)
@@ -195,6 +209,7 @@ end
 -- Calculates the quantile
 -- Currently uses the weighted mean of the two values the position is inbetween
 local function quantile(t, q)
+  assert(t ~= nil, "No table provided to quantile")
   assert(q >= 0 and q <= 1, "Quantile must be between 0 and 1")
   table.sort(t)
   local position = #t * q + 0.5
@@ -214,12 +229,14 @@ end
 
 
 local function median(t)
+  assert(t ~= nil, "No table provided to median")
   return quantile(t, 0.5)
 end
 
 
 local function quartile(t, i)
   local quartiles = {0, 0.25, 0.5, 0.75, 1}
+  assert(in_table(i, {1,2,3,4,5}), "i must be an integer between 1 and 5")
   if i == 1 then 
     return min(t)
   elseif i== 5 then
