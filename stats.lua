@@ -123,6 +123,7 @@ end
 
 -- checks if a value is in a table
 local function in_table(value, t)
+  assert(type(t) == table, "The second argument must be a table")
   for i, e in ipairs(t) do
     if value == e then
       return true
@@ -251,6 +252,7 @@ end
 
 -- Probability Density function of a Normal Distribution
 local function dNorm(x, mu, sd)
+  assert(type(x) == "number", "x must be a number")
   local mu = mu or 0
   local sd = sd or 1
 
@@ -262,6 +264,7 @@ end
 
 -- CDF of a normal distribution
 local function pNorm(q, mu, sd, accuracy)
+  assert(type(q) == "number", "q must be a number")
   mu = mu or 0
   sd = sd or 1
   accuracy = accuracy or 1e-3
@@ -346,6 +349,7 @@ end
 
 -- Performs a z-test on two tables and returns z-statistic.
 local function zTest(t1, t2)
+  assert(type(t1) == type(t2) == "table", "Both arguments must be a table")
   return (mean(t1) - mean(t2)) / 
          math.sqrt(var(t1) / count(t1) + var(t2) / count(t2))
 end 
@@ -353,11 +357,12 @@ end
 
 -- Calculates the p-value of a two sample zTest.
 local function zTestP(t1, t2)
+  assert(type(t1) == type(t2) == "table", "Both arguments must be a table")
   return pValue(zTest(t1, t2), pNorm)
 end
 
 
--- Calculaes the t-value of one or two means, assuming non equivalent variance.
+-- Calculates the t-value of one or two means, assuming non equivalent variance.
 local function tValue(y1, sd1, n1, y2, sd2, n2)
   return zValue(v1, sd1, n1, v2, sd2, n2)
 end
@@ -365,11 +370,15 @@ end
 
 -- Performs a t-test on two tables and returns t-statistic.
 local function tTest(t1, t2)
+  assert(type(t1) == type(t2) == "table", "Both arguments must be a table")
   return zTest(t1, t2)
 end 
 
 
 -- Calculates the p-value of a two sample tTest.
 local function tTestP(t1, t2)
+  assert(type(t1) == type(t2) == "table", "Both arguments must be a table")
   return pValue(zTest(t1, t2), pT, count(t1, t2) - 2)
 end
+
+print(tTestP({1,2,3,4}, 4))
