@@ -3,7 +3,6 @@ TODO: optimize findX for chi square
 TODO: Make findX automaitcally find bounds
 TODO: Type checking
 TODO: Sample Size
-TODO: F-Distribution and F-Test
 TODO: Chi-Square test
 TODO: Add more quantile algorithms 
       use: http://127.0.0.1:11774/library/stats/html/quantile.html
@@ -81,6 +80,14 @@ local function gamma(x)
 
   return gammafunc(x)
 end 
+
+
+-- Beta function 
+local function beta(x, y)
+  assert(x > 0, "x must be positive")
+  assert(y > 0, "y must be positive")
+  return (gamma(x) * gamma(y)) / gamma(x + y)
+end
 
 
 -- p-value of a quantile q of a probability function f
@@ -327,7 +334,43 @@ local function qChisq(p, df, accuracy)
 end 
 
 
+--[[ F Distribution Functions ]]--
+
+-- Probability Density of the F distribution
+local function dF(x, df1, df2)
+  return math.sqrt(((df1 * x)^df1 * df2^df2) / 
+                   ((df1 * x + df2)^(df1 + df2))) / 
+                  (x * beta(df1 / 2, df2 / 2))
+end
+
+
+-- CDF of the F distribution
+local function pF(x, df1, df2)
+  return integral(dF, 0.0001, x, 1e-4, df1, df2)
+end
+
+
+-- Quantile function of the F Distribution
+local function qF(p, df1, df2, accuracy)
+  if p == 0 then
+    return 0
+  elseif p == 1 then
+    return math.huge
+  else
+    assert(p > 0 and p < 1, "p must be between 0 and 1")
+  end
+  accuracy = accuracy or 0.01
+  return findX(p, pF, accuracy, df1, df2)
+end
+
+
 --[[ Tests ]]--
+local function assertTables(...)
+  for _, t in pairs({...}) do
+    assert(type(t) == "table", "Argument must be a table")
+  end
+end
+
 
 -- Calculates the Z-Score for one or two samples. 
 -- Assumes non equivalent Variance.
@@ -349,7 +392,7 @@ end
 
 -- Performs a z-test on two tables and returns z-statistic.
 local function zTest(t1, t2)
-  assert(type(t1) == type(t2) == "table", "Both arguments must be a table")
+  assertTables(t1, t2)
   return (mean(t1) - mean(t2)) / 
          math.sqrt(var(t1) / count(t1) + var(t2) / count(t2))
 end 
@@ -357,7 +400,7 @@ end
 
 -- Calculates the p-value of a two sample zTest.
 local function zTestP(t1, t2)
-  assert(type(t1) == type(t2) == "table", "Both arguments must be a table")
+  assertTables(t1, t2)
   return pValue(zTest(t1, t2), pNorm)
 end
 
@@ -370,15 +413,34 @@ end
 
 -- Performs a t-test on two tables and returns t-statistic.
 local function tTest(t1, t2)
-  assert(type(t1) == type(t2) == "table", "Both arguments must be a table")
+  assertTables(t1, t2)
   return zTest(t1, t2)
 end 
 
 
 -- Calculates the p-value of a two sample tTest.
 local function tTestP(t1, t2)
-  assert(type(t1) == type(t2) == "table", "Both arguments must be a table")
+  assertTables(t1, t2)
   return pValue(zTest(t1, t2), pT, count(t1, t2) - 2)
 end
 
-print(tTestP({1,2,3,4}, 4))
+
+-- Returns the f-value of two variances
+local function fValue(s1, s2)
+  return s1 / s2
+end
+
+
+-- Performs an f-test on two tables
+local function fTest(t1, t2)
+  assertTables(t1, t2)
+
+  return var(t1) / var(t2)
+end
+
+
+-- Returns the p-value of an f-test on two tables
+local function fTestP(t1, t2)
+  assertTables(t1, t2)
+  return pValue(fTest(t1, t2), pF, #t1, #t2)
+end 
