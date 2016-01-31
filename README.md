@@ -40,3 +40,38 @@ Function|Description
 dNorm(*x, mu = 0, sd = 1*)|Probability density function for the normal distribution with mean *mu* and standard deviation *sd* at point *x*
 pNorm(*x, mu = 0, sd = 0, accuracy = 0.001*)|Cumulative distribution function for the Normal distribution with mean *mu* and standard deviation *sd* at point *x*
 qNorm(*q, accuracy = 0.01*)| Calculates the z-value for *q* for N(0|1)
+
+# T-distribution functions
+Function|Description
+---|---
+dT(*x, df*)|probability density function of the t-distribution at *x* with *df* degrees of freedom
+pT(*q, df, accuracy = 0.01*)|CDF of the d-distribution at *x* with *df* degrees of freedom
+qT(*p, df*)|t-value corresponding to the *p*-value provided at *df* degrees of freedom
+
+# Chi-square distribution functions
+Function|Description
+---|---
+dChisq(*x, df*)|Probability density function of the chi-square distribution at *x* with *df* degrees of freedom.
+pChisq(*q, df*)|CDF of the chi-square distribution at *q* with *df* degrees of freedom
+qChisq(*p, df, accuracy = 0.01*)|Chi square value corresponding to the *p* value provided at *df* degrees of freedom down to *accuracy*'s accuracy.
+
+# F distribution functions
+Function|Description
+---|---
+dF(*x, df1, df2*)|Probability density function of *x* at *df1* and *df2* degrees of freedom.
+pF(*x, df1, df2*)|CDF of the F distribution of *x* at *df1* and *df2* degrees of freedom.
+qF(*p, df1, df2, accuracy = 0.01*)|F-statistic corresponding to the *p*-value at *df1* and *df2* degrees of freedom.
+
+# Tests
+Function|Description
+---|---
+assertTables(*...*)|Asserts that all provided arguments are tables
+zValue(*y1, sd1, n1 [, y2, sd2, n2]*)|Performs a z-test on one or two means
+zTest(*t1, t2*)|Performs a z-test on two sequences of numbers *t1* and *t2*
+zTestP(*t1, t2*)|Returns the p-value of a z-test on *t1* and *t2*
+tValue(*y1, sd1, n1 [, y2, sd2, n2]*)|Performs a t-test on one or two means.
+tTest(*t1, t2*)|Returns the t-value of the comparison of *t1* against *t2*
+tTestP(*t1, t2*)|Returns the p-value of the t-statistic of the comparison of *t1* against *t2*
+fValue(*s1, s2*)|Returns the F-value of two variances *s1* and *s2*
+fTest(*t1, t2*)|Returns the F-value of the comparison of *t1* against *t2*
+fTestP(*t1, t2*)|Returns the p-value of the F-statistic of the comparison of *t1* against *t2*
