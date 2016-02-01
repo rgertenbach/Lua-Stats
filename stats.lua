@@ -1,6 +1,4 @@
 --[[
-TODO: optimize findX for chi square
-TODO: Make findX automaitcally find bounds
 TODO: Type checking
 TODO: Sample Size
 TODO: Chi-Square test
@@ -13,13 +11,30 @@ TODO: Add more quantile algorithms
 
 -- Integrates a function from start to stop in delta sized steps
 local function integral(f, start, stop, delta, ...)
-    local delta = delta or 1e-5
-    local area = 0
-    for i = start, stop, delta do
-      area = area + f(i, unpack({...})) * delta
-    end
-    return area
+  local delta = delta or 1e-5
+  local area = 0
+  for i = start, stop, delta do
+    area = area + f(i, ...) * delta
   end
+  return area
+end
+
+
+-- Integrates a function from a given start value until
+-- it fills the absolute area a
+local function integralUntil(f, a, start, delta, ...)
+  assert(f ~= nil, "No function provided")
+  assert(a > 0, "Target Area must be > 0")
+  start = start or 0
+  delta = delta or 0.001
+  local currentA = 0
+
+  while currentA < a do
+    currentA = currentA + math.abs(f(start, ...) * delta)
+    start = start + delta
+  end
+  return start - delta / 2
+end
 
 
 -- Calculates the factorial of a number n recursively
@@ -46,7 +61,7 @@ local function findX(y, f, accuracy, ...)
   local minX, maxX, yVal, xVal = -100, 100, 0, 0
 
   while (maxX - minX > accuracy) do 
-    yVal = f(xVal, unpack({...}))
+    yVal = f(xVal, ...)
     if (yVal > y) then
       maxX = xVal
     else
@@ -74,7 +89,7 @@ local function gamma(x)
   local function gammafunc(z)
     if z == 1 then return 1
     elseif math.abs(z) <= 0.5 then return 1 / recigamma(z)
-    else return (z - 1) * gammafunc(z-1)
+    else return (z - 1) * gammafunc(z - 1)
     end
   end
 
@@ -94,7 +109,7 @@ end
 local function pValue(q, f, ...)
   assert(q ~= nil, "pValue needs a q-value")
   assert(f ~= nil, "pValue needs a function")
-  return math.abs(1 - math.abs(f(q, unpack({...})) - f(-q, unpack({...}))))
+  return math.abs(1 - math.abs(f(q, ...) - f(-q, ...)))
 end
 
 
@@ -284,7 +299,7 @@ end
 -- Calculates the Z-Score based on the cumulative probabiltiy
 local function qNorm(p, accuracy)
   accuracy = accuracy or 0.01
-  return findX(p, pNorm, accuracy)
+  return  integralUntil(dNorm, p, -20, 0.0001)
 end 
 
 
@@ -307,9 +322,9 @@ local function pT(q, df, accuracy)
 end 
 
 -- Finds T-Ratio for a given p-value.
-local function qT(p, accuracy)
+local function qT(p, df, accuracy)
   accuracy = accuracy or 0.01
-  return findX(p, pT, accuracy)
+  return integralUntil(dT, p, -20, 0.0001, df)
 end 
 
 
@@ -329,8 +344,8 @@ end
 
 -- Quantile function of the Chi-Square Distribution.
 local function qChisq(p, df, accuracy)
-    accuracy = accuracy or 0.01
-    return findX(p, pChisq, accuracy, df)
+    accuracy = accuracy or 0.001
+    return integralUntil(dChisq, p, 0, 0.001, df)
 end 
 
 
@@ -359,8 +374,8 @@ local function qF(p, df1, df2, accuracy)
   else
     assert(p > 0 and p < 1, "p must be between 0 and 1")
   end
-  accuracy = accuracy or 0.01
-  return findX(p, pF, accuracy, df1, df2)
+  accuracy = accuracy or 0.001
+  return integralUntil(dF, p, 0.00001, accuracy, df1, df2)
 end
 
 
