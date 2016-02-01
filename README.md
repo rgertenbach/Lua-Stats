@@ -5,6 +5,7 @@ Statistical functions for Lua
 Function|Description
 ---|---
 integral(*f, start, stop, delta, ...*)|Calculates the area under a function *f* from *start* to *stop* in *delta*-sized steps. The optional arguments *...* are passed on to the function to integrate
+integralUntil(f, a, start = 0, delta = 0.001, ...)|Integrates a function *f* from *start* at *delta* steps until the absolute area is *a*
 factorial(*x*)|Calculates the factorial recursively for integer *x* or using the gamma function if *x* is a float
 findX(*y, f, accuracy = 0.001, ...*)|Finds the x needed for *f* to return *y* at a certain *accuracy*, given the optional arguments *...*
 gamma(*x*)|the probability density function of the gamma distribution for *x*
