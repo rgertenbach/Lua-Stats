@@ -6,6 +6,13 @@ TODO: Add more quantile algorithms
       use: http://127.0.0.1:11774/library/stats/html/quantile.html
 ]]
 
+--[[
+Changelog:
+- Added sdPooled
+- Added support for unknown variances in Z-Test and t-test
+- Aded support for unknown variance 
+]]
+
 
 --[[ Generics ]]--
 
@@ -229,6 +236,13 @@ local function max(...)
 end 
 
 
+-- Pooled standard deviation for two already calculated standard deviations
+-- Seconds return is the new sample size adjusted for degrees of freedom
+local function sdPooled(sd1, n1, sd2, n2)
+  return math.sqrt(((n1 - 1) * sd1^2 + (n2 - 1) * sd2^2) / (n1 + n2 - 2))
+end 
+
+
 -- Calculates the quantile
 -- Currently uses the weighted mean of the two values the position is inbetween
 local function quantile(t, q)
@@ -244,9 +258,9 @@ local function quantile(t, q)
     return t[#t]
   elseif mod == 0 then
     return t[position]
-    else
-      return mod * t[math.ceil(position)] +
-             (1 - mod) * t[math.floor(position)] 
+  else
+    return mod * t[math.ceil(position)] +
+           (1 - mod) * t[math.floor(position)] 
   end 
 end 
 
@@ -389,16 +403,21 @@ end
 
 -- Calculates the Z-Score for one or two samples. 
 -- Assumes non equivalent Variance.
-local function zValue(y1, sd1, n1, y2, sd2, n2)
+local function zValue(y1, sd1, n1, y2, sd2, n2, sameVar)
   assert(sd1 > 0, "Standard Deviation has to be positive")
   assert(n1  > 1, "Sample Size has to be at least 2")
-
-  local y2 = y2 or 0
+  
+  y2 = y2 or 0
+  sameVar = sameVar or false
   local z
-  if (n2 == nil) then
-    z = (y1 - y2) / (sd1 / math.sqrt(n1))
+  local d = y1 - y2
+
+  if n2 == nil then
+    z = d / (sd1 / math.sqrt(n1))
+  elseif sameVar then
+    z = d / math.sqrt(sd1^2 / n1 + sd2^2 / n2)
   else
-    z = (y1 - y2) / math.sqrt(sd1 / n1 + sd2 / n2)
+    z = d / (sdPooled(sd1, n1, sd2, n2) * math.sqrt(1 / n1 + 1 / n2))
   end
 
   return z
@@ -406,10 +425,9 @@ end
 
 
 -- Performs a z-test on two tables and returns z-statistic.
-local function zTest(t1, t2)
+local function zTest(t1, t2, sameVar)
   assertTables(t1, t2)
-  return (mean(t1) - mean(t2)) / 
-         math.sqrt(var(t1) / count(t1) + var(t2) / count(t2))
+  return zValue(mean(t1), sd(t1), #t1, mean(t2), sd(t2), #t2, sameVar)
 end 
 
 
@@ -427,9 +445,8 @@ end
 
 
 -- Performs a t-test on two tables and returns t-statistic.
-local function tTest(t1, t2)
-  assertTables(t1, t2)
-  return zTest(t1, t2)
+local function tTest(t1, t2, sameVar)
+  return zTest(t1, t2, sameVar)
 end 
 
 
