@@ -6,14 +6,6 @@ TODO: Add more quantile algorithms
       use: http://127.0.0.1:11774/library/stats/html/quantile.html
 ]]
 
---[[
-Changelog:
-- Added sdPooled
-- Added support for unknown variances in Z-Test and t-test
-- Aded support for unknown variance 
-]]
-
-
 --[[ Generics ]]--
 
 -- Integrates a function from start to stop in delta sized steps
@@ -432,15 +424,15 @@ end
 
 
 -- Calculates the p-value of a two sample zTest.
-local function zTestP(t1, t2)
+local function zTestP(t1, t2, sameVar)
   assertTables(t1, t2)
-  return pValue(zTest(t1, t2), pNorm)
+  return pValue(zTest(t1, t2, sameVar), pNorm)
 end
 
 
 -- Calculates the t-value of one or two means, assuming non equivalent variance.
-local function tValue(y1, sd1, n1, y2, sd2, n2)
-  return zValue(v1, sd1, n1, v2, sd2, n2)
+local function tValue(y1, sd1, n1, y2, sd2, n2, sameVar)
+  return zValue(v1, sd1, n1, v2, sd2, n2, sameVar)
 end
 
 
@@ -451,9 +443,9 @@ end
 
 
 -- Calculates the p-value of a two sample tTest.
-local function tTestP(t1, t2)
+local function tTestP(t1, t2, sameVar)
   assertTables(t1, t2)
-  return pValue(zTest(t1, t2), pT, count(t1, t2) - 2)
+  return pValue(zTest(t1, t2, sameVar), pT, count(t1, t2) - 2)
 end
 
 
