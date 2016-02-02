@@ -31,6 +31,7 @@ sd(*...*)|Standard deviation
 sdPop(*...*)|Standard Deviation for the population
 min(*...*)|Minimum value
 max(*...*)|Maximum value
+sdPooled(*sd1, n1, sd2, n2*)|Calculates the pooled standard deviation
 quantile(*t, q*)|Gets the *q*-th quantile of sequence *t*, where 0 >= *t* >= 1
 median(*t*)|Median for table *t*
 quartile(*t, i*)|Wrapper for quantile returning<br>0: Minimum<br>1: 1st quartile<br>2: Median<br>3: 3rd quartile<br>4: Maximum
@@ -67,12 +68,12 @@ qF(*p, df1, df2, accuracy = 0.01*)|F-statistic corresponding to the *p*-value at
 Function|Description
 ---|---
 assertTables(*...*)|Asserts that all provided arguments are tables
-zValue(*y1, sd1, n1 [, y2, sd2, n2]*)|Performs a z-test on one or two means
-zTest(*t1, t2*)|Performs a z-test on two sequences of numbers *t1* and *t2*
-zTestP(*t1, t2*)|Returns the p-value of a z-test on *t1* and *t2*
-tValue(*y1, sd1, n1 [, y2, sd2, n2]*)|Performs a t-test on one or two means.
-tTest(*t1, t2*)|Returns the t-value of the comparison of *t1* against *t2*
-tTestP(*t1, t2*)|Returns the p-value of the t-statistic of the comparison of *t1* against *t2*
+zValue(*y1, sd1, n1 [, y2, sd2, n2, sameVar = false]*)|Performs a z-test on one or two means
+zTest(*t1, t2, sameVar = false*)|Performs a z-test on two sequences of numbers *t1* and *t2*
+zTestP(*t1, t2, sameVar = false*)|Returns the p-value of a z-test on *t1* and *t2*
+tValue(*y1, sd1, n1 [, y2, sd2, n2, sameVar = false]*)|Performs a t-test on one or two means.
+tTest(*t1, t2, sameVar = false*)|Returns the t-value of the comparison of *t1* against *t2*
+tTestP(*t1, t2, sameVar = false*)|Returns the p-value of the t-statistic of the comparison of *t1* against *t2*
 fValue(*s1, s2*)|Returns the F-value of two variances *s1* and *s2*
 fTest(*t1, t2*)|Returns the F-value of the comparison of *t1* against *t2*
 fTestP(*t1, t2*)|Returns the p-value of the F-statistic of the comparison of *t1* against *t2*
