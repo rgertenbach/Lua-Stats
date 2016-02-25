@@ -8,6 +8,80 @@ TODO: Add more quantile algorithms
 
 --[[ Generics ]]--
 
+local function assertTables(...)
+  for _, t in pairs({...}) do
+    assert(type(t) == "table", "Argument must be a table")
+  end
+end
+
+
+-- Simple map function
+local function map(t, f, ...)
+  assert(t ~= nil, "No table provided to map")
+  assert(f ~= nil, "No function provided to map")
+  local output = t
+
+  for i, e in ipairs(t) do
+    output[i] = f(e, ...)
+  end
+  return output
+end 
+
+
+-- Simple reduce function
+local function reduce(t, f)
+  assert(t ~= nil, "No table provided to reduce")
+  assert(f ~= nil, "No function provided to reduce")
+  local result
+
+  for i, value in ipairs(t) do
+    if i == 1 then
+      result = value
+    else
+      result = f(result, value)
+    end 
+  end
+  return result
+end 
+
+
+-- Returns a table consisting of all values looked up in the tables
+local function multiSubscript(i, ...)
+  assertTables(...)
+  assert(#{...} > 0, "Must provide at least one table")
+  return map({...}, function(t, index) return t[index] end, i)
+end 
+
+
+-- checks if a value is in a table as a value or key
+local function in_table(value, t, key)
+  assert(type(t) == 'table', "The second argument must be a table")
+  key = key or false
+  for i, e in pairs(t) do
+    if value == (key and i or e) then
+      return true
+    end
+  end
+  return false
+end
+
+
+-- Concatenates tables and scalars into one list
+local function unify(...)
+  local output = {}
+  for i, element in ipairs({...}) do
+    if type(element) == 'number' then
+      table.insert(output, element)
+    elseif type(element) == 'table' then
+      for j, row in ipairs(element) do
+        table.insert(output, row)
+      end
+    end 
+  end 
+  return output
+end 
+
+
 -- Integrates a function from start to stop in delta sized steps
 local function integral(f, start, stop, delta, ...)
   local delta = delta or 1e-5
@@ -112,63 +186,6 @@ local function pValue(q, f, ...)
 end
 
 
--- Simple map function
-local function map(t, f)
-  assert(t ~= nil, "No table provided to map")
-  assert(f ~= nil, "No function provided to map")
-  local output = t
-
-  for i, e in ipairs(t) do
-    output[i] = f(e)
-  end
-  return output
-end 
-
-
--- Simple reduce function
-local function reduce(t, f)
-  assert(t ~= nil, "No table provided to reduce")
-  assert(f ~= nil, "No function provided to reduce")
-  local result
-
-  for i, value in ipairs(t) do
-    if i == 1 then
-      result = value
-    else
-      result = f(result, value)
-    end 
-  end
-  return result
-end 
-
-
--- checks if a value is in a table
-local function in_table(value, t)
-  assert(type(t) == table, "The second argument must be a table")
-  for i, e in ipairs(t) do
-    if value == e then
-      return true
-    end
-  end
-  return false
-end
-
--- Concatenates tables and scalars into one list
-local function unify(...)
-  local output = {}
-  for i, element in ipairs({...}) do
-    if type(element) == 'number' then
-      table.insert(output, element)
-    elseif type(element) == 'table' then
-      for j, row in ipairs(element) do
-        table.insert(output, row)
-      end
-    end 
-  end 
-  return output
-end 
-
-
 --[[ Basic Arithmetic functions needed for aggregate functions ]]--
 local function sum(...) 
   return reduce(unify(...), function(a, b) return a + b end)
@@ -227,6 +244,53 @@ local function max(...)
   return data[#data]
 end 
 
+
+local function unique(t)
+  assertTables(t)
+  local uniqueValues = {}
+  for _, value in ipairs(t) do
+    if in_table(value, uniqueValues) == false then
+      table.insert(uniqueValues, value)
+    end 
+  end
+  return uniqueValues
+end
+
+
+local function frequency(t)
+  assertTables(t)
+  local counts = {}
+  for _, value in ipairs(t) do
+    if in_table(value, counts, true) then
+      counts[value] = counts[value] + 1
+    else 
+      counts[value] = 1
+    end
+  end 
+  return counts
+end
+
+--[[
+-- Contingency table
+local function contingency(t1, ...)
+  assertTables(t1, ...)
+  -- Check for equal length
+
+  local counts = {}
+
+  for i, v in ipairs(t1) do
+    local key = table.concat(multiSubscript(i, t1, ...), "\0") -- need to transform to string
+    if in_table(key, counts, true) then
+      counts[key] = counts[key] + 1
+    else
+      counts[key] = 1
+    end 
+  end   
+  return counts
+end
+
+print(unpack(contingency({1,1,1,2,2,3}, {1,1,2,2,2,3})))
+print(table.concat({1,2,3}, "\0"))]]
 
 -- Pooled standard deviation for two already calculated standard deviations
 -- Seconds return is the new sample size adjusted for degrees of freedom
@@ -386,12 +450,6 @@ end
 
 
 --[[ Tests ]]--
-local function assertTables(...)
-  for _, t in pairs({...}) do
-    assert(type(t) == "table", "Argument must be a table")
-  end
-end
-
 
 -- Calculates the Z-Score for one or two samples. 
 -- Assumes non equivalent Variance.
