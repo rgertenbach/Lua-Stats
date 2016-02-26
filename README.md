@@ -13,8 +13,10 @@ beta(*x,y*)|The probability density function of the beta distibution
 pValue(*q, f, ...*)| Calculates the p-value of a test statistic coming from the CDF *f*. The optional arguments *...* are passed on to *f*.
 map(*t, f*)|Applies a function *f* to every value of a table *t*.
 reduce(*t, f*)|Reduces a table *t* using a function *f* that takes two arguments.
-in_table(*value, t*)|True if *value* is in table *t*.
+in_table(*value, t, key = false*)|True if *value* is in table *t*. Searches for a key if *key* is true
 unify(*...*)|Takes an arbitrary number of values and tables and concatenates them into one big table
+unique(*t*)|Returns unique entities in table *t*
+multiSubscript(*i, ...*)|Returns an Array containing all elements of the provided tables at key *i*
 
 ## Arithmetic functions
 All functions taking only arbitrary optional arguments *...* concatenate all supplied values into a table and calculate from that.  
@@ -29,8 +31,11 @@ var(*...*)|Variance
 varPop(*...*)|Variance for the population
 sd(*...*)|Standard deviation
 sdPop(*...*)|Standard Deviation for the population
+cov(*t1, t2*)|Returns the Covariance between tables *t1* and *t1*
+cor(*t1, t2, method = "Pearson"*)|Returns the correlaion between two arrays *t1* and *t2*
 min(*...*)|Minimum value
 max(*...*)|Maximum value
+frequency(*t*)|Returns the number of occurrences of each element in a table *t*
 sdPooled(*sd1, n1, sd2, n2*)|Calculates the pooled standard deviation
 quantile(*t, q*)|Gets the *q*-th quantile of sequence *t*, where 0 >= *t* >= 1
 median(*t*)|Median for table *t*
