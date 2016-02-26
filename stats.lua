@@ -213,6 +213,38 @@ local function sdPop(...)
 end
 
 
+-- Covariance
+local function cov(t1, t2)
+  assertTables(t1, t2)
+  assert(#t1 == #t2, "The tables have to be of equal length")
+
+  mu1, mu2 = mean(t1), mean(t2)
+  dev1 = map(t1, function(x) return x-mu1 end)
+  dev2 = map(t2, function(x) return x-mu2 end)
+  
+  ss = 0
+  for i, v in ipairs(t1) do
+    ss = ss + v * t2[i]
+  end 
+
+  return ss / (#t1 - 1)
+end 
+
+
+--Correlation
+local function cor(t1, t2, method)
+  assertTables(t1, t2)
+  assert(#t1 == #t2, "The tables have to be of equal length")
+  method = method or "Pearson"
+
+  if method == "Pearson" then
+    return cov(t1, t2) / (sd(t1) * sd(t2))
+  else 
+    return nil -- Implement spearman and kendall
+  end 
+end
+
+
 local function min(...)
   local data = unify(...)
   
