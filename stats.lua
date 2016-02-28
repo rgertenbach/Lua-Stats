@@ -6,8 +6,7 @@ TODO: Add more quantile algorithms
       use: http://127.0.0.1:11774/library/stats/html/quantile.html
 ]]
 
---[[ Generics ]]--
-
+--[[ Asserions ]]--
 local function assertTables(...)
   for _, t in pairs({...}) do
     assert(type(t) == "table", "Argument must be a table")
@@ -15,13 +14,15 @@ local function assertTables(...)
 end
 
 
+--[[ Generics ]]--
+
 -- Simple map function
 local function map(t, f, ...)
   assert(t ~= nil, "No table provided to map")
   assert(f ~= nil, "No function provided to map")
-  local output = t
+  local output = {}
 
-  for i, e in ipairs(t) do
+  for i, e in pairs(t) do
     output[i] = f(e, ...)
   end
   return output
@@ -80,6 +81,28 @@ local function unify(...)
   end 
   return output
 end 
+
+
+local function keys(t)
+  output = {}
+  for key, _ in pairs(t) do
+    table.insert(output, key)
+  end
+  return output
+end
+
+--TODO: make one table instead of a table of tableswayfair
+-- Concatenates every value of t1 with every value of t2
+local function crossJoin(t1, t2, sep)
+  assertTables(t1, t2)
+  sep = sep or ""
+
+  return map(t1, function(e, t2) 
+    return map(t2, function(e2, e1) 
+      return e1 .. sep .. e2 
+    end, e) 
+  end, t2)
+end
 
 
 -- Integrates a function from start to stop in delta sized steps
@@ -245,6 +268,37 @@ local function max(...)
 end 
 
 
+-- Covariance
+local function cov(t1, t2)
+  assertTables(t1, t2)
+  assert(#t1 == #t2, "The tables have to be of equal length")
+
+  mu1, mu2 = mean(t1), mean(t2)
+  dev1 = map(t1, function(x) return x-mu1 end)
+  dev2 = map(t2, function(x) return x-mu2 end)
+  
+  ss = 0
+  for i, v in ipairs(t1) do
+    ss = ss + v * t2[i]
+  end 
+
+  return ss / (#t1 - 1)
+end 
+
+
+--Correlation
+local function cor(t1, t2, method)
+  assertTables(t1, t2)
+  assert(#t1 == #t2, "The tables have to be of equal length")
+  method = method or "Pearson"
+
+  if method == "Pearson" then
+    return cov(t1, t2) / (sd(t1) * sd(t2))
+  else 
+    return nil -- Implement spearman and kendall
+  end 
+end
+
 local function unique(t)
   assertTables(t)
   local uniqueValues = {}
@@ -270,27 +324,16 @@ local function frequency(t)
   return counts
 end
 
---[[
--- Contingency table
-local function contingency(t1, ...)
-  assertTables(t1, ...)
-  -- Check for equal length
 
-  local counts = {}
+local function frequencyTable(...)
+  assertTables(...)
+  
+  local keys = map({...}, function(t) return keys(t) end)
+  return keys
 
-  for i, v in ipairs(t1) do
-    local key = table.concat(multiSubscript(i, t1, ...), "\0") -- need to transform to string
-    if in_table(key, counts, true) then
-      counts[key] = counts[key] + 1
-    else
-      counts[key] = 1
-    end 
-  end   
-  return counts
-end
+end 
 
-print(unpack(contingency({1,1,1,2,2,3}, {1,1,2,2,2,3})))
-print(table.concat({1,2,3}, "\0"))]]
+print(unpack(crossJoin({1,2,3}, {1,2,3})))
 
 -- Pooled standard deviation for two already calculated standard deviations
 -- Seconds return is the new sample size adjusted for degrees of freedom
