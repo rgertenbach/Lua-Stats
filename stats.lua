@@ -30,28 +30,45 @@ end
 
 
 -- Simple reduce function
-local function reduce(t, f)
+local function reduce(t, f, ...)
   assert(t ~= nil, "No table provided to reduce")
   assert(f ~= nil, "No function provided to reduce")
   local result
 
-  for i, value in ipairs(t) do
+  for i, value in pairs(t) do
     if i == 1 then
       result = value
     else
-      result = f(result, value)
+      result = f(result, value, ...)
     end 
   end
   return result
 end 
 
 
--- Returns a table consisting of all values looked up in the tables
+-- Returns an array table consisting of all values looked up in the tables
 local function multiSubscript(i, ...)
   assertTables(...)
   assert(#{...} > 0, "Must provide at least one table")
   return map({...}, function(t, index) return t[index] end, i)
 end 
+
+
+-- Concatenates two 
+local function tableunion(t1, t2)
+  local output = {}
+
+  if t1 ~= nil then
+    for key, value in pairs(t1) do
+      table.insert(output, value)
+    end
+  end 
+
+  for key, value in pairs(t2) do
+    table.insert(output, value)
+  end
+  return output
+end
 
 
 -- checks if a value is in a table as a value or key
@@ -83,6 +100,7 @@ local function unify(...)
 end 
 
 
+-- Returns an array of the keys of a table
 local function keys(t)
   output = {}
   for key, _ in pairs(t) do
@@ -91,17 +109,29 @@ local function keys(t)
   return output
 end
 
---TODO: make one table instead of a table of tableswayfair
+
+-- Returns al values of a table, even non-array ones
+local function values(t)
+  assertTables(t)
+  local output = {}
+
+  for _, value in pairs(t) do
+    table.insert(output, value)
+  end
+  return output
+end
+
+
 -- Concatenates every value of t1 with every value of t2
 local function crossJoin(t1, t2, sep)
   assertTables(t1, t2)
   sep = sep or ""
 
-  return map(t1, function(e, t2) 
+  return reduce(map(t1, function(e, t2) 
     return map(t2, function(e2, e1) 
       return e1 .. sep .. e2 
     end, e) 
-  end, t2)
+  end, t2), function(t1, t2) return tableunion(t1, t2) end)
 end
 
 
@@ -325,15 +355,41 @@ local function frequency(t)
 end
 
 
+-- Constructor for frequency tables
+local function createFrequencyTable(keys, default)
+  assertTables(keys)
+
+  default = default or 0
+
+  local output = {}
+  for _, key in ipairs(keys) do
+    output[key] = default
+  end
+  return output
+end
+
+
 local function frequencyTable(...)
   assertTables(...)
+  local input = {...}
+
+  local keys = reduce(map(input, function(t) return unique(t) end), 
+                      crossJoin, "\0")
   
-  local keys = map({...}, function(t) return keys(t) end)
-  return keys
+  local counts = createFrequencyTable(keys)
 
-end 
+  for row, _ in ipairs(input[1]) do
+    counts[table.concat(multiSubscript(row, ...), "\0")] =
+      counts[table.concat(multiSubscript(row, ...), "\0")]  + 1
+  end
+  return counts, keys
+end
 
-print(unpack(crossJoin({1,2,3}, {1,2,3})))
+c, k = frequencyTable({1,2}, {3,4})
+
+print(unpack(keys(c)))
+print(unpack(values(c)))
+print(unpack(k))
 
 -- Pooled standard deviation for two already calculated standard deviations
 -- Seconds return is the new sample size adjusted for degrees of freedom
