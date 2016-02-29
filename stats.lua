@@ -135,6 +135,17 @@ local function crossJoin(t1, t2, sep)
 end
 
 
+-- Counts number of matches in a string
+string.gmatchCount = function(s, pattern)
+  local matches = string.gmatch(s, pattern)
+  local count  = 0
+  while matches() do
+    count = count + 1
+  end
+  return count
+end
+
+
 -- Integrates a function from start to stop in delta sized steps
 local function integral(f, start, stop, delta, ...)
   local delta = delta or 1e-5
@@ -356,15 +367,22 @@ end
 
 
 -- Constructor for frequency tables
+-- Takes \0 separated keys for dimensions
 local function createFrequencyTable(keys, default)
   assertTables(keys)
 
   default = default or 0
 
   local output = {}
+  output.table = {}
+
   for _, key in ipairs(keys) do
-    output[key] = default
+    output.table[key] = default
   end
+
+  output.rows = #keys
+  output.columns = string.gmatchCount(keys[1], "\t") + 1
+
   return output
 end
 
@@ -374,22 +392,22 @@ local function frequencyTable(...)
   local input = {...}
 
   local keys = reduce(map(input, function(t) return unique(t) end), 
-                      crossJoin, "\0")
+                      crossJoin, "\t")
   
   local counts = createFrequencyTable(keys)
 
   for row, _ in ipairs(input[1]) do
-    counts[table.concat(multiSubscript(row, ...), "\0")] =
-      counts[table.concat(multiSubscript(row, ...), "\0")]  + 1
+    counts.table[table.concat(multiSubscript(row, ...), "\t")] =
+      counts.table[table.concat(multiSubscript(row, ...), "\t")]  + 1
   end
-  return counts, keys
+  return counts
 end
 
-c, k = frequencyTable({1,2}, {3,4})
+c = frequencyTable({1,2}, {3,4})
 
 print(unpack(keys(c)))
 print(unpack(values(c)))
-print(unpack(k))
+
 
 -- Pooled standard deviation for two already calculated standard deviations
 -- Seconds return is the new sample size adjusted for degrees of freedom
