@@ -348,7 +348,22 @@ local function quartile(t, i)
   else 
     return quantile(t, quartiles[i])
   end 
-end 
+end
+
+local function mode(t)
+  local frequencies = frequency(t)
+  local last
+  local most
+
+  for value, repeats in pairs(frequency) do
+    if not last or (value > last) then
+      last = repeats
+      most = value
+    end
+  end
+
+  return most
+end
 
 
 --[[ Normal Distribution Functions ]]--
