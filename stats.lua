@@ -251,11 +251,11 @@ local function cov(t1, t2)
   assertTables(t1, t2)
   assert(#t1 == #t2, "The tables have to be of equal length")
 
-  mu1, mu2 = mean(t1), mean(t2)
-  dev1 = map(t1, function(x) return x-mu1 end)
-  dev2 = map(t2, function(x) return x-mu2 end)
+  local mu1, mu2 = mean(t1), mean(t2)
+  local dev1 = map(t1, function(x) return x-mu1 end)
+  local dev2 = map(t2, function(x) return x-mu2 end)
   
-  ss = 0
+  local ss = 0
   for i, v in ipairs(t1) do
     ss = ss + v * t2[i]
   end 
