@@ -256,8 +256,8 @@ local function cov(t1, t2)
   local dev2 = map(t2, function(x) return x-mu2 end)
   
   local ss = 0
-  for i, v in ipairs(t1) do
-    ss = ss + v * t2[i]
+  for i, v in ipairs(dev1) do
+    ss = ss + v * dev2[i]
   end 
 
   return ss / (#t1 - 1)
